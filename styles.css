@@ -294,6 +294,11 @@ h1 {
 
 .field input.bad { border-color: var(--fail); background: #fff1ef; }
 .field input[readonly] { background: #efe6d4; }
+.field input.on-keypad {
+  outline: 2px solid #8d7040;
+  border-color: #8d7040;
+  background: #fffaf0;
+}
 
 .preview, .form-msg { min-height: 1.3em; margin: 0; font-size: 14px; }
 .preview { font-family: Consolas, "Cascadia Mono", ui-monospace, monospace; }
@@ -355,6 +360,83 @@ footer {
   color: #cbbda6;
 }
 
+.keypad[hidden] { display: none !important; }
+.keypad-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+  pointer-events: none;
+}
+.keypad-shot {
+  position: fixed;
+  top: 8px;
+  left: 10px;
+  right: 148px;
+  z-index: 42;
+  background: var(--paper-2);
+  border: 2px solid #8d7040;
+  border-radius: 10px;
+  padding: 6px 10px 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.keypad-shot-label {
+  display: block;
+  font-size: 12px;
+  color: #5c5144;
+}
+.keypad-shot-value {
+  font-family: Consolas, "Cascadia Mono", ui-monospace, monospace;
+  font-size: 28px;
+  line-height: 1.2;
+  color: var(--ink);
+  min-height: 1.2em;
+}
+.keypad-shot-value::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 2px;
+  background: #8d7040;
+  vertical-align: -0.1em;
+  animation: caret 1s steps(1) infinite;
+}
+@keyframes caret {
+  50% { opacity: 0; }
+}
+.keypad-pad {
+  position: fixed;
+  right: 8px;
+  top: 46%;
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  width: min(46vw, 176px);
+  z-index: 42;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px;
+  background: #2a3230;
+  border: 1px solid rgba(196, 164, 106, 0.4);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+.keypad-pad button {
+  border: 0;
+  border-radius: 10px;
+  background: #e8dfc8;
+  color: #241c14;
+  font-size: 22px;
+  font-weight: 700;
+  min-height: 48px;
+  cursor: pointer;
+}
+.keypad-pad button.wide { grid-column: span 2; }
+.keypad-pad button.ok {
+  background: #8f2424;
+  color: #fffaf0;
+}
+
 @media (max-width: 980px) {
   html, body { height: 100%; }
   body { overflow: hidden; }
@@ -366,6 +448,7 @@ footer {
     flex-direction: column;
     overflow: hidden;
   }
+  body.keypad-open header > div:first-child { visibility: hidden; }
   header {
     flex-direction: row;
     align-items: center;

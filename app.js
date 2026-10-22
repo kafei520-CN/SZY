@@ -78,7 +78,18 @@
     btnNew: document.getElementById("btnNew"),
     btnNextStation: document.getElementById("btnNextStation"),
     stats: document.getElementById("stats"),
+    keypad: document.getElementById("keypad"),
+    keypadMask: document.getElementById("keypadMask"),
+    keypadLabel: document.getElementById("keypadLabel"),
+    keypadValue: document.getElementById("keypadValue"),
+    keypadPad: document.getElementById("keypadPad"),
   };
+
+  var keypad = { key: null, label: "" };
+
+  function useKeypad() {
+    return window.matchMedia("(max-width: 980px)").matches;
+  }
 
   function loadStats() {
     try {
@@ -246,34 +257,45 @@
       small.textContent = wireHint(field.wire);
       span.appendChild(small);
       var input = document.createElement("input");
-      input.inputMode = "decimal";
       input.autocomplete = "off";
       input.spellcheck = false;
       input.setAttribute("aria-label", field.label);
       input.dataset.key = field.key;
       input.value = answers[field.key] || "";
-      input.readOnly = state.demo || state.graded;
       input.placeholder = "0.000";
-      input.addEventListener("input", function () {
-        state.answers[field.key] = input.value;
-        input.classList.remove("bad");
-        els.formMsg.textContent = "";
-        renderPreview();
-        renderSheet();
-        markDoneSteps();
-      });
-      input.addEventListener("keydown", function (event) {
-        if (event.key !== "Enter") return;
-        event.preventDefault();
-        var inputs = els.fields.querySelectorAll("input");
-        var index = Array.prototype.indexOf.call(inputs, input);
-        if (index < inputs.length - 1) inputs[index + 1].focus();
-        else if (state.step < steps().length - 1) {
-          state.step += 1;
-          renderAll();
-          focusFirst();
-        } else submit();
-      });
+      if (useKeypad()) {
+        input.readOnly = true;
+        input.setAttribute("inputmode", "none");
+        input.addEventListener("pointerdown", function (event) {
+          if (state.demo || state.graded) return;
+          event.preventDefault();
+          openKeypad(field.key, field.label);
+        });
+        input.addEventListener("focus", function (event) {
+          event.preventDefault();
+          input.blur();
+          if (state.demo || state.graded) return;
+          openKeypad(field.key, field.label);
+        });
+      } else {
+        input.readOnly = state.demo || state.graded;
+        input.inputMode = "decimal";
+        input.addEventListener("input", function () {
+          applyFieldValue(field.key, input.value);
+        });
+        input.addEventListener("keydown", function (event) {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          var inputs = els.fields.querySelectorAll("input");
+          var index = Array.prototype.indexOf.call(inputs, input);
+          if (index < inputs.length - 1) inputs[index + 1].focus();
+          else if (state.step < steps().length - 1) {
+            state.step += 1;
+            renderAll();
+            focusFirst();
+          } else submit();
+        });
+      }
       label.appendChild(span);
       label.appendChild(input);
       els.fields.appendChild(label);
@@ -289,6 +311,78 @@
         return Survey.parseReading(state.answers[field.key]) != null;
       });
       buttons[index].className = done ? "done" : "";
+    });
+  }
+
+  function applyFieldValue(key, value) {
+    state.answers[key] = value;
+    var live = els.fields.querySelector('input[data-key="' + key + '"]');
+    if (live) {
+      live.value = value;
+      live.classList.remove("bad");
+    }
+    els.formMsg.textContent = "";
+    renderPreview();
+    renderSheet();
+    markDoneSteps();
+  }
+
+  function openKeypad(key, label) {
+    if (!useKeypad() || state.demo || state.graded) return;
+    keypad.key = key;
+    keypad.label = label;
+    els.keypadLabel.textContent = label + "（米）";
+    els.keypadValue.textContent = state.answers[key] || "";
+    els.keypad.hidden = false;
+    document.body.classList.add("keypad-open");
+    var live = els.fields.querySelector('input[data-key="' + key + '"]');
+    if (live) live.classList.add("on-keypad");
+  }
+
+  function closeKeypad() {
+    keypad.key = null;
+    els.keypad.hidden = true;
+    document.body.classList.remove("keypad-open");
+    els.fields.querySelectorAll("input.on-keypad").forEach(function (el) {
+      el.classList.remove("on-keypad");
+    });
+  }
+
+  function keypadType(ch) {
+    if (!keypad.key) return;
+    var cur = state.answers[keypad.key] || "";
+    if (ch === "back") cur = cur.slice(0, -1);
+    else if (ch === "ok") {
+      closeKeypad();
+      return;
+    } else if (ch === ".") {
+      if (cur.indexOf(".") >= 0) return;
+      cur += cur ? "." : "0.";
+    } else {
+      if (cur === "0") cur = ch;
+      else cur += ch;
+    }
+    applyFieldValue(keypad.key, cur);
+    els.keypadValue.textContent = cur;
+  }
+
+  function buildKeypad() {
+    var keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back", "ok"];
+    els.keypadPad.innerHTML = "";
+    keys.forEach(function (key) {
+      var button = document.createElement("button");
+      button.type = "button";
+      if (key === "back") button.textContent = "⌫";
+      else if (key === "ok") {
+        button.textContent = "确定";
+        button.className = "wide ok";
+      } else button.textContent = key;
+      button.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        keypadType(key);
+      });
+      els.keypadPad.appendChild(button);
     });
   }
 
@@ -513,6 +607,7 @@
   }
 
   function focusFirst() {
+    if (useKeypad()) return;
     var input = els.fields.querySelector("input");
     if (input && !input.readOnly) input.focus();
   }
@@ -529,6 +624,7 @@
     state.grade = null;
     state.lastStat = null;
     els.formMsg.textContent = "";
+    closeKeypad();
     renderAll();
   }
 
@@ -564,6 +660,7 @@
     if (state.grade.readingPass) state.stats.stationsPass += 1;
     state.lastStat = true;
     saveStats();
+    closeKeypad();
     renderAll();
     els.result.scrollIntoView({ block: "nearest" });
   }
@@ -579,6 +676,7 @@
     state.graded = false;
     state.grade = null;
     els.formMsg.textContent = "";
+    closeKeypad();
     renderAll();
     focusFirst();
   }
@@ -594,6 +692,7 @@
     state.demo = true;
     state.step = 0;
     els.formMsg.textContent = "";
+    closeKeypad();
     renderAll();
   }
 
@@ -616,12 +715,14 @@
     });
     els.btnPrev.addEventListener("click", function () {
       if (state.step === 0) return;
+      closeKeypad();
       state.step -= 1;
       renderAll();
       focusFirst();
     });
     els.btnNext.addEventListener("click", function () {
       if (state.step >= steps().length - 1) return;
+      closeKeypad();
       state.step += 1;
       renderAll();
       focusFirst();
@@ -633,6 +734,12 @@
     els.btnNew.addEventListener("click", newLine);
     els.btnNextStation.addEventListener("click", nextStation);
     els.btnDemo.addEventListener("click", enterDemo);
+    buildKeypad();
+    document.addEventListener("pointerdown", function (event) {
+      if (els.keypad.hidden) return;
+      if (event.target.closest("#keypadPad, .keypad-shot, #fields .field")) return;
+      closeKeypad();
+    }, true);
     window.addEventListener("resize", paint);
     if (window.ResizeObserver) {
       var observer = new ResizeObserver(function () { paint(); });
