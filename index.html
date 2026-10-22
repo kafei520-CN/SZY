@@ -31,14 +31,16 @@
 
     <main class="layout">
       <section class="stage" aria-label="望远镜">
-        <div class="peep"><i></i><span>准星</span></div>
-        <div class="scope-wrap">
-          <canvas id="scope" aria-label="水准仪镜框和十字丝"></canvas>
-        </div>
-        <p id="scopeCaption" class="scope-caption"></p>
-        <div class="orient" role="group" aria-label="物像方向">
-          <button type="button" id="btnInvert" aria-pressed="false">倒像</button>
-          <button type="button" id="btnErect" aria-pressed="true">正像</button>
+        <div class="instrument">
+          <div class="peep"><i></i><span>准星</span></div>
+          <div class="scope-wrap">
+            <canvas id="scope" aria-label="水准仪镜框和十字丝"></canvas>
+          </div>
+          <p id="scopeCaption" class="scope-caption"></p>
+          <div class="orient" role="group" aria-label="物像方向">
+            <button type="button" id="btnInvert" aria-pressed="false">倒像</button>
+            <button type="button" id="btnErect" aria-pressed="true">正像</button>
+          </div>
         </div>
         <div class="rod-rack" id="rodRack">
           <figure data-rod="black">
