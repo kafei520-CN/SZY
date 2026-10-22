@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>水准仪读数模拟</title>
+  <meta name="description" content="工程测量水准仪读数练习。黑面 0 尺、红面 4.687 尺、红面 4.787 尺，可做仅中丝或四等水准一站。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%231c2620' width='16' height='16'/%3E%3Ccircle cx='8' cy='8' r='5.2' fill='none' stroke='%23c4a46a' stroke-width='1.2'/%3E%3Cpath stroke='%23f4f1ea' stroke-width='.7' d='M8 3.2v9.6M3.2 8h9.6M5.2 6.2h5.6M5.2 9.8h5.6'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <p class="eyebrow">工程测量 · DS3</p>
+        <h1>水准仪读数模拟</h1>
+        <p class="lead">同一站的上丝、中丝、下丝和黑红面出自同一条视线，前后视可以记进手簿。</p>
+      </div>
+      <div class="switch" role="group" aria-label="练习模式">
+        <button type="button" id="modeFourth" aria-pressed="true">四等水准</button>
+        <button type="button" id="modeMid" aria-pressed="false">仅中丝</button>
+      </div>
+    </header>
+
+    <ul class="limits">
+      <li>读数不超过 3 mm</li>
+      <li>黑红面读数差 ≤ 3 mm</li>
+      <li>高差之差 ≤ 5 mm</li>
+      <li>前后视距差 ≤ 5 m</li>
+    </ul>
+
+    <main class="layout">
+      <section class="stage" aria-label="望远镜">
+        <div class="peep"><i></i><span>准星</span></div>
+        <div class="scope-wrap">
+          <canvas id="scope" aria-label="水准仪镜框和十字丝"></canvas>
+        </div>
+        <p id="scopeCaption" class="scope-caption"></p>
+        <div class="orient" role="group" aria-label="物像方向">
+          <button type="button" id="btnInvert" aria-pressed="false">倒像</button>
+          <button type="button" id="btnErect" aria-pressed="true">正像</button>
+        </div>
+        <div class="rod-rack" id="rodRack">
+          <figure data-rod="black">
+            <canvas aria-label="黑面 0 尺"></canvas>
+            <figcaption><b>黑面 0 尺</b><span>自 0.000 m</span><em></em></figcaption>
+          </figure>
+          <figure data-rod="k4687">
+            <canvas aria-label="红面 4.7 尺"></canvas>
+            <figcaption><b>红面 4.7 尺</b><span>K = 4.687 m</span><em></em></figcaption>
+          </figure>
+          <figure data-rod="k4787">
+            <canvas aria-label="红面 4.8 尺"></canvas>
+            <figcaption><b>红面 4.8 尺</b><span>K = 4.787 m</span><em></em></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="book" aria-label="水准测量手簿">
+        <p class="book-kicker">水准测量手簿</p>
+        <h2 id="stationMeta"></h2>
+        <p id="stationSub" class="station-sub"></p>
+        <p id="linkNote" class="link-note"></p>
+        <ol class="steps" id="steps"></ol>
+        <form id="readForm">
+          <div id="fields"></div>
+          <p id="preview" class="preview"></p>
+          <p id="formMsg" class="form-msg" role="status"></p>
+          <div class="actions">
+            <button type="button" id="btnPrev">上一照准</button>
+            <button type="button" id="btnNext">下一照准</button>
+            <button type="submit" class="primary" id="btnSubmit">提交本站</button>
+          </div>
+        </form>
+        <div id="sheet"></div>
+        <div id="result"></div>
+        <div class="actions">
+          <button type="button" id="btnDemo">读数示范</button>
+          <button type="button" id="btnNew">重新出题</button>
+          <button type="button" id="btnNextStation" disabled>下一站</button>
+        </div>
+        <p id="stats" class="stats"></p>
+        <details>
+          <summary>怎么读、怎么记</summary>
+          <div class="help">
+            <p>默认正像，和下面三把尺方向相同：读数越大越靠视场上方。需要练习 DS3 倒像时再点「倒像」：读数越大越靠视场下方。记录仍按上丝小于中丝、中丝小于下丝。</p>
+            <p>下面三把尺和望远镜用同一套尺面：0 在尺底，E 在每一分米的 0 侧，短横在增大一侧，0 线上外侧有尖。正像和下面三把尺方向相同。倒像只把读数方向反过来（大读数在视场下方），左右不变。每一分米十格，实心和空白都是 1 cm。</p>
+            <p>三把两米尺：黑面从 0 起算；红面 4.7 尺的常数是 4.687 m，尺底附近是 47；红面 4.8 尺的常数是 4.787 m，尺底附近是 48。后尺和前尺各用一把，红面读数等于同一高度的黑面读数加该尺常数。</p>
+            <p>四等按后视黑面（下、上、中）、后视红面（中）、前视黑面（下、上、中）、前视红面（中）。仅中丝只记四个中丝。视距等于（下丝减上丝）乘 100。两把尺常数相差 0.100 m，红面高差要先改正再和黑面取中数。</p>
+            <p>为能在屏幕上估读到毫米，视线长度取 12–24 m。计算和限差与四等水准相同。规范里 DS3 四等视线长度一般不超过 100 m。</p>
+          </div>
+        </details>
+      </section>
+    </main>
+    <footer>静态页面，无需构建。放到 GitHub 仓库根目录后，在 Pages 里选择该分支的根目录即可。</footer>
+  </div>
+  <script src="survey.js"></script>
+  <script src="draw.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
